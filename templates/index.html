@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevPulse — Modern Tech Blog & Community</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Marked JS for Markdown Parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <!-- DOMPurify for XSS Sanitization -->
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+    <!-- App Stylesheet -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+
+    <!-- TOP NAVIGATION BAR -->
+    <header class="navbar">
+        <div class="nav-container">
+            <a href="#" class="brand-logo" id="logo-btn">
+                <span class="logo-icon"><i class="fa-solid fa-code"></i></span>
+                <span class="logo-text">Dev<span class="highlight">Pulse</span></span>
+            </a>
+
+            <!-- Search Bar -->
+            <div class="search-box">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input type="text" id="search-input" placeholder="Search posts, tags, authors..." autocomplete="off">
+                <button id="search-clear-btn" class="search-clear hidden"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- Header Actions -->
+            <div class="nav-actions">
+                <button class="icon-btn" id="theme-toggle-btn" title="Toggle Dark/Light Mode">
+                    <i class="fa-solid fa-moon" id="theme-icon"></i>
+                </button>
+
+                <!-- Unauthenticated State -->
+                <div id="nav-auth-logged-out" class="auth-buttons">
+                    <button class="btn btn-outline" id="open-login-btn">Log In</button>
+                    <button class="btn btn-primary" id="open-register-btn">Sign Up</button>
+                </div>
+
+                <!-- Authenticated State -->
+                <div id="nav-auth-logged-in" class="user-menu-wrapper hidden">
+                    <button class="btn btn-primary btn-create-post" id="create-post-btn">
+                        <i class="fa-solid fa-pen-to-square"></i> New Post
+                    </button>
+                    <div class="profile-dropdown">
+                        <button class="avatar-btn" id="user-menu-btn">
+                            <img id="nav-avatar" src="" alt="User Avatar">
+                        </button>
+                        <div class="dropdown-menu hidden" id="user-dropdown">
+                            <div class="dropdown-header">
+                                <span class="user-display-name" id="menu-user-name">User Name</span>
+                                <span class="user-handle" id="menu-user-username">@username</span>
+                            </div>
+                            <div class="dropdown-divider"></div>
+                            <a href="#" class="dropdown-item" id="menu-profile-btn"><i class="fa-regular fa-user"></i> My Profile</a>
+                            <a href="#" class="dropdown-item" id="menu-myposts-btn"><i class="fa-regular fa-file-lines"></i> My Articles</a>
+                            <div class="dropdown-divider"></div>
+                            <a href="#" class="dropdown-item danger" id="logout-btn"><i class="fa-solid fa-arrow-right-from-bracket"></i> Log Out</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN CONTAINER (SPA VIEWS) -->
+    <main class="main-layout" id="main-content">
+
+        <!-- VIEW 1: POSTS FEED (Home / Search / Category Filter) -->
+        <section id="view-feed" class="view-section active">
+            <!-- Hero Banner -->
+            <div class="hero-banner">
+                <div class="hero-content">
+                    <span class="hero-tag"><i class="fa-solid fa-bolt"></i> Platform for Developers & Creators</span>
+                    <h1>Publishing, Insights & Discussions for Modern Developers</h1>
+                    <p>Discover in-depth engineering guides, frontend practices, backend architecture, and join community conversations.</p>
+                </div>
+            </div>
+
+            <!-- Category Bar & Search Filter Feedback -->
+            <div class="feed-header-bar">
+                <div class="category-pills" id="category-pills">
+                    <!-- Dynamic categories injected here -->
+                </div>
+                <div id="active-filter-indicator" class="filter-indicator hidden">
+                    <span id="filter-text">Filtered by...</span>
+                    <button id="clear-filter-btn" class="btn-text"><i class="fa-solid fa-xmark"></i> Clear</button>
+                </div>
+            </div>
+
+            <!-- Content Layout: Posts Grid + Sidebar -->
+            <div class="content-grid">
+                <!-- Posts Feed Container -->
+                <div class="posts-column">
+                    <div id="posts-container" class="posts-list">
+                        <!-- Loading skeleton / Post cards injected here -->
+                    </div>
+                    <!-- Empty State -->
+                    <div id="posts-empty-state" class="empty-state hidden">
+                        <i class="fa-regular fa-folder-open empty-icon"></i>
+                        <h3>No posts found</h3>
+                        <p>Try clearing filters or search terms to see more articles.</p>
+                        <button id="reset-feed-btn" class="btn btn-outline">Reset Feed</button>
+                    </div>
+                </div>
+
+                <!-- Right Sidebar -->
+                <aside class="sidebar-column">
+                    <!-- Platform Stats Card -->
+                    <div class="widget-card">
+                        <div class="widget-title"><i class="fa-solid fa-chart-line"></i> Community Stats</div>
+                        <div class="stats-grid" id="sidebar-stats">
+                            <div class="stat-box">
+                                <span class="stat-num" id="stat-posts">0</span>
+                                <span class="stat-lbl">Articles</span>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-num" id="stat-comments">0</span>
+                                <span class="stat-lbl">Comments</span>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-num" id="stat-users">0</span>
+                                <span class="stat-lbl">Writers</span>
+                            </div>
+                            <div class="stat-box">
+                                <span class="stat-num" id="stat-views">0</span>
+                                <span class="stat-lbl">Reads</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Popular Tags Widget -->
+                    <div class="widget-card">
+                        <div class="widget-title"><i class="fa-solid fa-tags"></i> Popular Tags</div>
+                        <div class="tags-cloud" id="sidebar-tags">
+                            <!-- Dynamic tags injected here -->
+                        </div>
+                    </div>
+
+                    <!-- Platform Features Widget -->
+                    <div class="widget-card info-widget">
+                        <div class="widget-title"><i class="fa-solid fa-sparkles"></i> Welcome to DevPulse</div>
+                        <p>Share your knowledge, engage with fellow software engineers, and express your feedback through nested comments and post likes.</p>
+                        <button class="btn btn-primary full-width" id="sidebar-cta-btn">Start Writing</button>
+                    </div>
+                </aside>
+            </div>
+        </section>
+
+        <!-- VIEW 2: SINGLE POST DETAIL & COMMENT THREAD -->
+        <section id="view-post" class="view-section hidden">
+            <div class="post-reader-container">
+                <button class="back-link-btn" id="post-back-btn">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Articles
+                </button>
+
+                <article class="post-full-card" id="post-detail-content">
+                    <!-- Dynamic Post Detail Content injected here -->
+                </article>
+
+                <!-- COMMENTS SECTION -->
+                <section class="comments-section" id="comments-section">
+                    <div class="comments-header">
+                        <h2><i class="fa-regular fa-comments"></i> Discussion (<span id="comments-count">0</span>)</h2>
+                    </div>
+
+                    <!-- Comment Input Box -->
+                    <div class="comment-input-card">
+                        <div id="comment-auth-notice" class="auth-notice hidden">
+                            <i class="fa-solid fa-lock"></i> Log in or create an account to join the discussion.
+                            <button class="btn btn-primary btn-sm" id="comment-login-trigger">Log In</button>
+                        </div>
+                        <form id="comment-form" class="comment-form">
+                            <div class="replying-to-banner hidden" id="reply-banner">
+                                <span>Replying to <strong id="reply-user-target">@user</strong></span>
+                                <button type="button" id="cancel-reply-btn"><i class="fa-solid fa-xmark"></i></button>
+                            </div>
+                            <textarea id="comment-textarea" placeholder="Share your thoughts, feedback, or questions..." rows="3" required></textarea>
+                            <div class="comment-form-actions">
+                                <span class="markdown-hint"><i class="fa-brands fa-markdown"></i> Markdown supported</span>
+                                <button type="submit" class="btn btn-primary" id="submit-comment-btn">
+                                    <i class="fa-solid fa-paper-plane"></i> Post Comment
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- Comment Tree Container -->
+                    <div class="comments-list" id="comments-tree">
+                        <!-- Dynamic Comments injected here -->
+                    </div>
+                </section>
+            </div>
+        </section>
+
+        <!-- VIEW 3: POST EDITOR (Create / Edit Article) -->
+        <section id="view-editor" class="view-section hidden">
+            <div class="editor-container">
+                <div class="editor-header">
+                    <h1 id="editor-title">Create New Article</h1>
+                    <button class="btn btn-outline" id="editor-cancel-btn"><i class="fa-solid fa-xmark"></i> Cancel</button>
+                </div>
+
+                <form id="post-form" class="editor-form">
+                    <input type="hidden" id="editor-post-id" value="">
+
+                    <div class="form-group">
+                        <label for="editor-post-title">Article Title *</label>
+                        <input type="text" id="editor-post-title" class="form-input title-input" placeholder="e.g. Master Async Programming in Python 3.13" required>
+                    </div>
+
+                    <div class="form-row-2">
+                        <div class="form-group">
+                            <label for="editor-category">Category *</label>
+                            <select id="editor-category" class="form-input" required>
+                                <!-- Categories populated dynamically -->
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="editor-tags">Tags (comma-separated)</label>
+                            <input type="text" id="editor-tags" class="form-input" placeholder="e.g. Python, Async, Performance">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editor-cover">Cover Image URL</label>
+                        <input type="url" id="editor-cover" class="form-input" placeholder="https://images.unsplash.com/...">
+                        <span class="field-hint">Optional URL for post banner. Defaults to a beautiful dev theme image.</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="editor-summary">Short Summary / Excerpt</label>
+                        <input type="text" id="editor-summary" class="form-input" placeholder="Brief 1-2 sentence overview of your article...">
+                    </div>
+
+                    <!-- Content Tabs: Write / Preview -->
+                    <div class="form-group">
+                        <div class="editor-tabs-bar">
+                            <label>Article Content (Markdown Supported) *</label>
+                            <div class="tab-buttons">
+                                <button type="button" class="tab-btn active" id="tab-write-btn"><i class="fa-solid fa-pen"></i> Write</button>
+                                <button type="button" class="tab-btn" id="tab-preview-btn"><i class="fa-solid fa-eye"></i> Live Preview</button>
+                            </div>
+                        </div>
+                        
+                        <div id="editor-write-pane" class="editor-pane">
+                            <textarea id="editor-content" class="form-input content-textarea" rows="14" placeholder="# Introduction&#10;&#10;Write your article here using **Markdown** formatting...&#10;&#10;```python&#10;print('Hello World')&#10;```" required></textarea>
+                        </div>
+
+                        <div id="editor-preview-pane" class="editor-pane markdown-body hidden">
+                            <!-- Live markdown preview rendered here -->
+                        </div>
+                    </div>
+
+                    <div class="editor-footer">
+                        <div class="status-selector">
+                            <label class="radio-label">
+                                <input type="radio" name="post_status" value="published" checked>
+                                <span>Publish Immediately</span>
+                            </label>
+                            <label class="radio-label">
+                                <input type="radio" name="post_status" value="draft">
+                                <span>Save as Draft</span>
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-lg" id="publish-submit-btn">
+                            <i class="fa-solid fa-rocket"></i> Submit Article
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+
+        <!-- VIEW 4: USER PROFILE -->
+        <section id="view-profile" class="view-section hidden">
+            <div class="profile-container">
+                <!-- User Header Card -->
+                <div class="profile-header-card">
+                    <div class="profile-avatar-wrapper">
+                        <img id="profile-avatar" src="" alt="Avatar">
+                    </div>
+                    <div class="profile-info-content">
+                        <div class="profile-names">
+                            <h1 id="profile-name">User Name</h1>
+                            <span class="profile-username" id="profile-username">@username</span>
+                            <span class="role-badge" id="profile-role">Author</span>
+                        </div>
+                        <p class="profile-bio" id="profile-bio">No bio provided yet.</p>
+                        <div class="profile-meta">
+                            <span><i class="fa-regular fa-calendar"></i> Joined <span id="profile-joined">...</span></span>
+                        </div>
+                    </div>
+                    <div class="profile-actions-box">
+                        <button class="btn btn-outline" id="edit-profile-open-btn"><i class="fa-solid fa-user-pen"></i> Edit Profile</button>
+                    </div>
+                </div>
+
+                <!-- Profile Statistics Grid -->
+                <div class="profile-stats-row">
+                    <div class="p-stat-card">
+                        <span class="p-stat-num" id="p-stat-posts">0</span>
+                        <span class="p-stat-lbl">Articles</span>
+                    </div>
+                    <div class="p-stat-card">
+                        <span class="p-stat-num" id="p-stat-comments">0</span>
+                        <span class="p-stat-lbl">Comments</span>
+                    </div>
+                    <div class="p-stat-card">
+                        <span class="p-stat-num" id="p-stat-likes">0</span>
+                        <span class="p-stat-lbl">Likes Received</span>
+                    </div>
+                </div>
+
+                <!-- Profile Content Tabs -->
+                <div class="profile-tabs-bar">
+                    <button class="p-tab-btn active" data-ptab="user-posts"><i class="fa-regular fa-file-lines"></i> User Articles</button>
+                </div>
+
+                <div id="user-posts-container" class="posts-list">
+                    <!-- User's posts list here -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- AUTH MODAL DIALOG -->
+    <div id="auth-modal" class="modal-overlay hidden">
+        <div class="modal-box">
+            <button class="modal-close" id="auth-modal-close"><i class="fa-solid fa-xmark"></i></button>
+
+            <!-- Auth Tabs -->
+            <div class="modal-tabs">
+                <button class="modal-tab-btn active" id="tab-login-btn">Log In</button>
+                <button class="modal-tab-btn" id="tab-register-btn">Create Account</button>
+            </div>
+
+            <!-- LOGIN FORM -->
+            <form id="login-form" class="auth-form">
+                <h2>Welcome Back!</h2>
+                <p class="auth-subtitle">Sign in to publish articles, like, and reply to comments.</p>
+
+                <div id="login-error" class="alert-banner danger hidden"></div>
+
+                <div class="form-group">
+                    <label for="login-identifier">Username or Email</label>
+                    <input type="text" id="login-identifier" class="form-input" placeholder="e.g. alex_dev or alex@example.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="login-password">Password</label>
+                    <input type="password" id="login-password" class="form-input" placeholder="••••••••" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary full-width btn-lg">Log In</button>
+                
+                <div class="demo-credentials-box">
+                    <span><i class="fa-solid fa-lightbulb"></i> Quick Demo Logins:</span>
+                    <div class="demo-buttons">
+                        <button type="button" class="btn btn-sm btn-outline demo-login-btn" data-user="alex_dev" data-pass="admin123">Admin (alex_dev)</button>
+                        <button type="button" class="btn btn-sm btn-outline demo-login-btn" data-user="sarah_code" data-pass="password123">Sarah (sarah_code)</button>
+                    </div>
+                </div>
+            </form>
+
+            <!-- REGISTER FORM -->
+            <form id="register-form" class="auth-form hidden">
+                <h2>Join DevPulse</h2>
+                <p class="auth-subtitle">Create a free account to share your technical knowledge.</p>
+
+                <div id="register-error" class="alert-banner danger hidden"></div>
+
+                <div class="form-group">
+                    <label for="reg-username">Username *</label>
+                    <input type="text" id="reg-username" class="form-input" placeholder="e.g. dev_master" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-email">Email Address *</label>
+                    <input type="email" id="reg-email" class="form-input" placeholder="e.g. dev@example.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-password">Password *</label>
+                    <input type="password" id="reg-password" class="form-input" placeholder="Min. 6 characters" required minlength="6">
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-fullname">Full Name</label>
+                    <input type="text" id="reg-fullname" class="form-input" placeholder="e.g. Jane Doe">
+                </div>
+
+                <div class="form-group">
+                    <label for="reg-bio">Short Bio</label>
+                    <input type="text" id="reg-bio" class="form-input" placeholder="e.g. Frontend developer loving CSS & JS">
+                </div>
+
+                <button type="submit" class="btn btn-primary full-width btn-lg">Create Account</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- EDIT PROFILE MODAL -->
+    <div id="edit-profile-modal" class="modal-overlay hidden">
+        <div class="modal-box">
+            <button class="modal-close" id="edit-profile-close"><i class="fa-solid fa-xmark"></i></button>
+            <h2>Edit Profile</h2>
+            <form id="edit-profile-form" class="auth-form">
+                <div class="form-group">
+                    <label for="ep-fullname">Full Name</label>
+                    <input type="text" id="ep-fullname" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label for="ep-bio">Bio</label>
+                    <textarea id="ep-bio" class="form-input" rows="3" placeholder="Tell the community about yourself..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="ep-avatar">Avatar Image URL</label>
+                    <input type="url" id="ep-avatar" class="form-input" placeholder="https://...">
+                </div>
+                <button type="submit" class="btn btn-primary full-width">Save Changes</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- APP JAVASCRIPT MODULES -->
+    <script src="{{ url_for('static', filename='js/api.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
